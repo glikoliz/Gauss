@@ -86,6 +86,7 @@
             }//итерации
             for (int i = 0; i < n; i++) c[i] += x[i];
             Console.WriteLine("Уточненная оценка погрешности: " + b / (1 - b) * (sm(c) - sm(prev)));
+            Console.ReadKey();
         }
         static double sm(double[] x)
         {
