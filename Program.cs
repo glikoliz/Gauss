@@ -1,14 +1,11 @@
-﻿using System.Globalization;
-using System.Numerics;
-using System.Runtime.InteropServices.ObjectiveC;
-
-namespace ConsoleApp7
+﻿namespace ConsoleApp7
 {
     internal class Program
     {
+        const int n = 4;
         static void Main(string[] args)
         {
-            const int n = 4;
+            //const int n = 4;
             const double pogr = 0.001;
             double[,] a, obr = new double[n, n];
             double[] x;
@@ -22,7 +19,7 @@ namespace ConsoleApp7
             };
             x = new double[n] { 0.774, 0.245, 0.343, 0.263 };
             Console.WriteLine("Решение методом Гаусса: ");
-            gauss(a, x, n);
+            gauss(a, x);
             a = new double[n, n] {
                 { 5.526, 0.305, 0.887, 0.037 },
                 { 0.658, 2.453, 0.678, 0.192 },
@@ -30,6 +27,7 @@ namespace ConsoleApp7
                 { 0.081, 0.521, 0.192, 4.988 }
             };
             x = new double[n] { 0.774, 0.245, 0.343, 0.263 };
+            Console.WriteLine();
             Console.WriteLine("Нахождение обратной матрицы: ");
             d = det(a, n);
             if (d != 0)
@@ -40,15 +38,20 @@ namespace ConsoleApp7
                     {
                         int m = n - 1;
                         double[,] tmp = cut(a, n, i, j);
-                        obr[i, j] = Math.Pow(-1.0, i + j ) * det(tmp, m) / d;
+                        obr[i, j] = Math.Pow(-1.0, i + j) * det(tmp, m) / d;
                     }
                 }
             }
-            obr = trans(obr, n);
-            print(obr, n);
-            double A=norm(a, n);
-            double A1=norm(obr, n);
-            Console.WriteLine(A1);
+            obr = trans(obr);
+            print(obr);
+            for (int i = 0; i < n; i++)
+                x1 = Math.Max(x1, x[i]);
+            double A = norm(a);
+            double A1 = norm(obr);
+            Console.WriteLine();
+            Console.WriteLine("Абсолютная погрешность: " + Math.Round(A1, 1, MidpointRounding.ToPositiveInfinity) * pogr);
+            Console.WriteLine("Относительная погрешность: " + Math.Round(A * A1 * pogr / x1, 4, MidpointRounding.ToPositiveInfinity));
+            x1 = 0;
             for (int i = 0; i < n; i++)
             {
                 double k = a[i, i];
@@ -57,31 +60,41 @@ namespace ConsoleApp7
                 x[i] /= k;
                 a[i, i] = 0;
             }//преобразование системы к виду для МПИ
-            b = norm(a, n);//вычисляем ||b||
             for (int i = 0; i < n; i++)
                 x1 = Math.Max(x1, x[i]);
+            Console.WriteLine();
+            Console.WriteLine("Преобразование системы для МПИ:");
+            print(a);
+            b = normb(a);//вычисляем ||b||
             tst = ((1 - b) / x1) * 0.01;
             kkk = Math.Ceiling(Math.Log(tst) / Math.Log(b));//считаем количество итераций
-            double[] c = multiply(a, x, n);
+            Console.WriteLine("Необходимое количество итераций: " + Math.Round(Math.Log(tst) / Math.Log(b), 4));
+            Console.WriteLine();
+            double[] c = multiply(a, x);
             double[] prev = c;
             for (int k = 1; k < kkk; k++)
             {
                 for (int i = 0; i < n; i++)
                     c[i] += x[i];
                 prev = c;
-                c = multiply(a, c, n);
+                Console.WriteLine($"Итерация №{k + 1}: ");
+                for (int i = 0; i < n; i++)
+                {
+                    Console.WriteLine(Math.Round(c[i], 4));
+                }
+                c = multiply(a, c);
             }//итерации
             for (int i = 0; i < n; i++) c[i] += x[i];
-            Console.WriteLine(b / (1 - b) * (sm(c, n) - sm(prev, n)));
+            Console.WriteLine("Уточненная оценка погрешности: " + b / (1 - b) * (sm(c) - sm(prev)));
         }
-        static double sm(double[] x, int n)
+        static double sm(double[] x)
         {
             double ok = 0;
             for (int i = 0; i < n; i++)
                 ok += Math.Abs(x[i]);
             return ok;
         }
-        static double norm(double[,] a, int n)
+        static double norm(double[,] a)
         {
             double max = 0;
             for (int i = 0; i < n; i++)
@@ -93,7 +106,19 @@ namespace ConsoleApp7
             }
             return max;
         }
-        static double[,] trans(double[,] a, int n)
+        static double normb(double[,] a)
+        {
+            double max = 0;
+            for (int i = 0; i < n; i++)
+            {
+                double sum = 0;
+                for (int j = 0; j < n; j++)
+                    sum += Math.Abs(a[i, j]);
+                max = Math.Max(sum, max);
+            }
+            return max;
+        }
+        static double[,] trans(double[,] a)
         {
             double[,] tmp = new double[n, n];
             for (int i = 0; i < n; i++)
@@ -105,7 +130,7 @@ namespace ConsoleApp7
             }
             return tmp;
         }
-        static void print(double[,] a, double[] x, int n)
+        static void print(double[,] a, double[] x)
         {
             for (int i = 0; i < n; i++)
             {
@@ -116,7 +141,7 @@ namespace ConsoleApp7
             }
             Console.WriteLine();
         }
-        static void print(double[,] a, int n)
+        static void print(double[,] a)
         {
             for (int i = 0; i < n; i++)
             {
@@ -171,8 +196,8 @@ namespace ConsoleApp7
 
             return tmp;
         } //обрезать матрицу
-        static void gauss(double[,] a, double[] x, int n)
-        { 
+        static void gauss(double[,] a, double[] x)
+        {
             int imax;
             double amax, c;
             //print(a, x, n);
@@ -226,10 +251,10 @@ namespace ConsoleApp7
                 for (int j = i + 1; j < n; j++)
                     x[i] -= a[i, j] * x[j];
             }
-            for(int i=0;i<n;i++)
+            for (int i = 0; i < n; i++)
                 Console.WriteLine($"x[{i}]={Math.Round(x[i], 4)}");
         }
-        static double[] multiply(double[,] a, double[] b, int n)
+        static double[] multiply(double[,] a, double[] b)
         {
             double[] x = new double[n];
             double sum = 0;
